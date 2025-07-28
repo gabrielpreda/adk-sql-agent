@@ -11,17 +11,21 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
 
+
+
 from sql_agent.sql_agent import root_agent as sql_agent
 from dotenv import load_dotenv
 
 load_dotenv()
 
-logger = logging.getLogger("local_explorer_assistant_api")
-logger.setLevel(logging.INFO)
 
 APP_NAME = "adk-sql-agent"
 USER_ID = os.getenv("USER_ID", "user")
 SESSION_ID = str(uuid.uuid4())
+
+logger = logging.getLogger(APP_NAME)
+logger.setLevel(logging.INFO)
+
 
 app = FastAPI()
 runner: Runner = None
