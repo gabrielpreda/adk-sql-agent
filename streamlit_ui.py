@@ -38,16 +38,18 @@ for message in st.session_state.messages:
                          avatar=avatars[message["role"]]):
 
         st.write(message["content"], unsafe_allow_html=True)
-        if message.get("sql"):
-            st.markdown("<h5 style='text-align: left; color: #005aff;'>SQL</h5>", unsafe_allow_html=True)
-            st.write(message["sql"], unsafe_allow_html=True)
+
         if message.get("raw_result"):
             st.markdown("<h5 style='text-align: left; color: #005aff;'>Result</h5>", unsafe_allow_html=True)
-            st.write(message["raw_result"], unsafe_allow_html=True)
+            st.markdown(message["raw_result"], unsafe_allow_html=True)
+
         if message.get("result_evaluation"):
             st.markdown("<h5 style='text-align: left; color: #005aff;'>Result evaluation</h5>", unsafe_allow_html=True)
-            st.write(message["result_evaluation"], unsafe_allow_html=True)
+            st.write(message["result_evaluation"])
 
+        if message.get("sql"):
+            st.markdown("<h5 style='text-align: left; color: #005aff;'>SQL</h5>", unsafe_allow_html=True)
+            st.code(message["sql"])
 
 if prompt := st.chat_input():
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -86,9 +88,9 @@ def parse_response_string(raw_input: str) -> dict:
     # Step 2: Try parsing JSON
     try:
         data = json.loads(clean_str)
-    except json.JSONDecodeError as e:
-
+    except (json.JSONDecodeError, Exception) as e:
         print(f"Invalid JSON input: {e}")
+        data = ""
 
     return data
 
@@ -119,17 +121,15 @@ if st.session_state.messages[-1]["role"] != "assistant":
                         st.markdown(data["summary"], unsafe_allow_html=True)
                         data_summary = data
 
-
                     # Show result
                     if data.get("raw_result"):
                         st.markdown("<h5 style='text-align: left; color: #005aff;'>Result</h5>", unsafe_allow_html=True)
-                        st.markdown(data["raw_result"])
-
+                        st.markdown(data["raw_result"], unsafe_allow_html=True)
 
                     # Show result evaluation
                     if data.get("result_evaluation"):
                         st.markdown("<h5 style='text-align: left; color: #005aff;'>Result evaluation</h5>", unsafe_allow_html=True)
-                        st.code(data["result_evaluation"])
+                        st.write(data["result_evaluation"])
 
                     # Show SQL query
                     if data.get("sql"):
