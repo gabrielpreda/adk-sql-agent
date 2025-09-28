@@ -13,7 +13,7 @@ from google.genai.types import Content, Part
 
 
 
-from sql_agent.sql_agent import root_agent as sql_agent
+from sql_agent.agent import root_agent as sql_agent
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -41,8 +41,6 @@ app.add_middleware(
 class QueryRequest(BaseModel):
     query: str
     history: list[str] = []
-
-
 
 
 def build_content_from_history_and_query(query: str, history: List[str]) -> Content:
