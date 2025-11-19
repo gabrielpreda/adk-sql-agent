@@ -8,7 +8,13 @@ Backend: FastAPI service (main.py)
 Agents:   
 * **Coordinator**: sql_agent (sql_agent.py)  
 * **Subagents**:  
-    * **Evaluate Result** agent (evaluate_result.py)   
+    * **Rephraser** agent (rewrite_prompt.py)
+    * **Generator** agent (generator.py)
+    * **Analyzer** agent (analyzer.py)
+    * **Reflexion** agent (reflexion.py)
+    * **Routing** agent (routing.py)
+
+
 
 Function Tools:  
 * **get_schema** tool (db_tools.py)  

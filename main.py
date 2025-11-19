@@ -102,9 +102,14 @@ async def process_query(req: QueryRequest):
     ):
         if event.is_final_response():
             if event.content and event.content.parts:
-                response_text += event.content.parts[0].text
+                part_text = event.content.parts[0].text
+                response_text += part_text + "\n"
             elif event.actions and event.actions.escalate:
-                response_text = f"Agent escalated: {event.error_message or 'No specific message.'}"
-            break
+                response_text += f"Agent escalated: {event.error_message or 'No specific message.'}\n"
+            # Do not break here, wait for all agents in the sequence to finish
     logger.info("System response: {response_text}")
     return {"response_text": response_text}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8080)
