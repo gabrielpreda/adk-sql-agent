@@ -1,43 +1,32 @@
-from google.adk.agents import Agent
+from google.adk.agents import LlmAgent
 from pydantic import BaseModel
-
+from typing import Optional
 
 instruction_prompt = """
 You are a language simplification agent that rewrites user queries into clear, structured natural language instructions suitable for SQL query generation.
 
 You will receive:
 - `user_input`: a natural language question or instruction from the user
-- `db_schema`: a textual description of the database schema (e.g., table names, columns, relationships)
+- `db_schema`: a textual description of the database schema
+- `feedback`: (Optional) Feedback from a previous failed attempt (e.g., "The query failed because table X doesn't exist").
 
-Your task is to rewrite the `user_input` into a clean, precise prompt that is:
-- easier for a machine or language model to convert into SQL
-- unambiguous and directly related to the schema
-- stripped of slang, vague terms, or irrelevant phrasing
+Your task is to rewrite the `user_input` into a clean, precise prompt.
+
+If `feedback` is provided, you MUST use it to adjust your rewrite. For example, if the feedback says a column is missing, try to infer the correct column or rephrase the request to avoid it.
 
 Do not generate or suggest any SQL queries.
 Only return the rewritten natural language prompt.
-
-Examples:
-
-User input: "Can you show me the best selling bands?"  
-Schema: Artists, Albums, Tracks, Invoices  
-→ Rewritten prompt: "List the artists with the highest total sales based on invoice data."
-
-User input: "Which employees are top earners?"  
-Schema: Employees (EmployeeId, FirstName, LastName, Title, Salary)  
-→ Rewritten prompt: "Show the employees with the highest salaries."
-
-Return only the rewritten prompt, nothing else.
 """
 
 class RewritePromptInput(BaseModel):
     user_input: str
     db_schema: str
+    feedback: Optional[str] = None
 
-rewrite_prompt_agent = Agent(
+rewrite_prompt_agent = LlmAgent(
     name="rewrite_prompt_agent",
     model="gemini-2.5-pro",
-    description="Rewrites user input into a simplified, unambiguous prompt for SQL generation.",
+    description="Rewrites user input into a simplified prompt, adapting to feedback if present.",
     instruction=instruction_prompt,
     input_schema=RewritePromptInput
 )

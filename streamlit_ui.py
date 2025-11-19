@@ -12,7 +12,7 @@ st.set_page_config(page_title='SQL Agent',
 st.markdown("<h2 style='text-align: center; color: #005aff;'>SQL Agent</h2>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center; color: #005aff;'>Explore your SQL data with Gemini & ADK</h3>", unsafe_allow_html=True)
 
-API_URL = "http://localhost:8000/query"
+API_URL = "http://localhost:8080/query"
 
 avatars = {
     "assistant" : "assets/gemini_avatar.png",
@@ -42,6 +42,16 @@ for message in st.session_state.messages:
         if message.get("raw_result"):
             st.markdown("<h5 style='text-align: left; color: #005aff;'>Result</h5>", unsafe_allow_html=True)
             st.markdown(message["raw_result"], unsafe_allow_html=True)
+            data = message["raw_result"]
+            if isinstance(data, list):
+                df = pd.DataFrame(data[-1] if isinstance(data[-1], list) else data)
+            else:
+                df = pd.DataFrame(data)
+            if df.shape[1] >= 2:
+                columns = ["Author", "Count"]
+                df.columns = columns
+            print(df)
+            st.markdown(df.to_markdown(index=False),  unsafe_allow_html=True)
 
         if message.get("result_evaluation"):
             st.markdown("<h5 style='text-align: left; color: #005aff;'>Result evaluation</h5>", unsafe_allow_html=True)

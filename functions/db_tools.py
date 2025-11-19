@@ -1,4 +1,3 @@
-from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.function_tool import FunctionTool
 import ast
 import logging
