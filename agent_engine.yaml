@@ -1,0 +1,40 @@
+apiVersion: agent-engine.google.com/v1
+kind: Agent
+metadata:
+  name: adk-sql-agent
+  description: "Multi-agent SQL system with iterative query refinement"
+spec:
+  # The main agent entry point
+  agent:
+    module: sql_agent.agent
+    name: root_agent
+  
+  # Runtime configuration
+  runtime:
+    python_version: "3.11"
+    
+  # Environment variables
+  env:
+    - name: GOOGLE_GENAI_USE_VERTEXAI
+      value: "TRUE"
+    - name: GOOGLE_CLOUD_PROJECT
+      valueFrom:
+        projectId: true
+    - name: GOOGLE_CLOUD_LOCATION
+      valueFrom:
+        region: true
+  
+  # Resource requirements
+  resources:
+    cpu: "2"
+    memory: "4Gi"
+    
+  # Scaling configuration
+  scaling:
+    minInstances: 1
+    maxInstances: 10
+    
+  # Health check
+  healthCheck:
+    enabled: true
+    path: /health
