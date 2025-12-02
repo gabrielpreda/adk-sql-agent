@@ -86,6 +86,10 @@ async def init_runner():
     )
     logger.info("Runner initialized and session created.")
 
+@app.get("/status")
+async def get_status():
+    return {"status": "OK"}
+
 @app.post("/query")
 async def process_query(req: QueryRequest):
 

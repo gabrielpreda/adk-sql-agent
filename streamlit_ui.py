@@ -82,10 +82,11 @@ def parse_response_string(raw_input: str) -> dict:
     """
 
     # Step 0: Test if we do have content
+    format = "text"
     if not raw_input:
         return {"error": "error encountered: empty response"}
 
-
+    print("RAW INPUT: ", raw_input)
     # Step 1: Remove markdown fences if they exist
     if raw_input.strip().startswith("```json"):
         clean_str = "\n".join(
@@ -98,11 +99,14 @@ def parse_response_string(raw_input: str) -> dict:
     # Step 2: Try parsing JSON
     try:
         data = json.loads(clean_str)
+        format = "JSON"
     except (json.JSONDecodeError, Exception) as e:
         print(f"Invalid JSON input: {e}")
-        data = ""
+        data = raw_input
+        format = "text"
 
-    return data
+
+    return data, format
 
 if st.session_state.messages[-1]["role"] != "assistant":
     with st.chat_message("assistant", avatar=avatars["assistant"]):
@@ -112,10 +116,10 @@ if st.session_state.messages[-1]["role"] != "assistant":
                 "history": st.session_state.history})
 
             response_str = response.json().get("response_text")
-            data = parse_response_string(response_str)
+            data, format = parse_response_string(response_str)
 
             # Update history for next round
-            if data:
+            if data and format == "JSON":
                 st.session_state.history = data.get("history", [])
 
                 data_summary = data_sql = data_summary = None
@@ -126,6 +130,7 @@ if st.session_state.messages[-1]["role"] != "assistant":
                         "avatar": avatars["assistant"]}
                     st.session_state.messages.append(message)
                 else:
+                    print(data)
                     # Show summary
                     if data.get("summary"):
                         st.markdown(data["summary"], unsafe_allow_html=True)
@@ -154,3 +159,10 @@ if st.session_state.messages[-1]["role"] != "assistant":
                             "avatar": avatars["assistant"]}
                     st.session_state.messages.append(message)
 
+            elif data and format == "text":
+                st.markdown(data, unsafe_allow_html=True)
+                message = { "role": "assistant", 
+                            "content": data,
+                            "avatar": avatars["assistant"]
+                        }
+                st.session_state.messages.append(message)
