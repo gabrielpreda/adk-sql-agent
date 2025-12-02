@@ -13,7 +13,7 @@ SERVICE_NAME="adk-sql-agent"
 REPO_LOCATION="us"  # same as you used when creating the repo
 REPO_NAME="adk-sql-agent-repo"
 IMAGE_NAME="${REPO_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE_NAME}"
-# IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}"
+#IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}"
 
 echo "🚀 Deploying ADK SQL Agent to Cloud Run"
 echo "Project: $PROJECT_ID"
