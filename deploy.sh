@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-PROJECT_ID="gemini-first-439812"
+PROJECT_ID="your-project"
 REGION="${GOOGLE_CLOUD_LOCATION:-us-central1}"
 AGENT_NAME="adk-sql-agent"
 SERVICE_ACCOUNT="${AGENT_NAME}-sa@${PROJECT_ID}.iam.gserviceaccount.com"
