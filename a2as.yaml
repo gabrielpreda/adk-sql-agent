@@ -1,0 +1,208 @@
+manifest:
+  version: "0.1.3"
+  schema: https://a2as.org/cert/schema
+  subject:
+    name: gabrielpreda/adk-sql-agent
+    source: https://github.com/gabrielpreda/adk-sql-agent
+    branch: main
+    commit: "716abded"
+    scope: [functions/db_tools.py, reproduce_loop.py, sql_agent/agent.py, subagents/analyzer.py, subagents/generator.py, subagents/reflexion.py,
+      subagents/rewrite_prompt.py, subagents/routing.py]
+  issued:
+    by: A2AS.org
+    at: '2026-02-11T16:40:05Z'
+    url: https://a2as.org/certified/agents/gabrielpreda/adk-sql-agent
+  signatures:
+    digest: sha256:gUMZNWXri7i5GTnNGZ7vxh0l2n5qAQ4tgqQUmfeq-tI
+    key: ed25519:qF1_0cjxqgJrI5vZ3YuwwLq8aqQLV-l81QzROH6PLrQ
+    sig: ed25519:Zs8cePPa0Hc5ks5-o8iV1a4bqXlNN_VyEcKRI6-PdRrtHmdUDuGui4AW025FToqfqFUad0iuC-46PkssQMg4DQ
+
+agents:
+  analyzer_agent:
+    type: instance
+    models: [gemini-2.5-pro]
+    params:
+      name: analyzer_agent
+      description: Analyzes the result of an SQL query execution.
+      instruction: [You are an SQL Analysis Agent. Your goal is to analyze the result of an SQL query execution, in the context
+          of the user's original request and the database schema., 'You will receive:', '- `user_input`: The original natural
+          language query from the user.', '- `sql_query`: The SQL query that was generated and executed.', '- `result`: The
+          raw result returned by the database (or an error message).', '- `db_schema`: The schema of the database.', 'Your
+          task is to produce a detailed analysis. You must determine:', '1. Did the SQL query execute successfully?', '2.
+          Does the result look reasonable given the query?', '3. Does the result answer the user''s question?', '4. Are there
+          any obvious errors or missing information?', 'Output your analysis as a clear, concise text summary. Do not make
+          a final decision on', what to do next; just analyze the current situation.]
+      input_schema: AnalyzerInput
+  generator_agent:
+    type: instance
+    models: [gemini-2.5-pro]
+    tools: [get_schema_tool, run_sql_query_tool]
+    params:
+      name: generator_agent
+      description: Generates and runs SQL queries.
+      instruction: [You are an SQL Generator & Runner Agent., 'Your task is to:', 1. Understand the user's request (or the
+          rewritten prompt)., 2. Retrieve the database schema using `get_schema_tool` (if you haven't already)., 3. Generate
+          a valid SQL query., 4. Execute the query using `run_sql_query_tool`., 5. Return the SQL query and the raw result.,
+        '**Function Tools**', '1. `get_schema_tool`: Retrieves the database schema.', '- Use this first to understand the
+          structure of the database.', '- It can be called with or without a specific table name:', '- To get the full schema:',
+        '```json', '{', '"input": {}', '}', '```', '- To get the schema for a specific table:', '```json', '{', '"input":
+          {', '"table": "<table_name>"', '}', '}', '```', 'IMPORTANT: ALWAYS get full schema!', '2. `run_sql_query_tool`:
+          Executes a SQL query and returns the result.', '- Call this after you''ve generated a SQL query.', '- Use the following
+          input structure:', '```json', '{', '"input": {', '"query": "<your_generated_sql_query>"', '}', '}', '```', '---',
+        '**Final Output**', 'Always return a JSON object with the following fields:', '```json', '{', '"sql": "<the generated
+          SQL query>",', '"raw_result": "<the raw query output as structured data>"', '}']
+  refinement_loop:
+    type: instance
+    params:
+      name: RefinementLoop
+      max_iterations: "2"
+      sub_agents: [rewrite_prompt_agent, generator_agent, analyzer_agent, reflexion_agent, routing_agent]
+  reflexion_agent:
+    type: instance
+    models: [gemini-2.5-pro]
+    params:
+      name: reflexion_agent
+      description: Decides whether to accept the result or retry based on analysis.
+      instruction: [You are a Reflexion & Decision Agent. Your goal is to review the analysis of an SQL query execution and
+          decide whether to proceed or retry., 'You will receive:', '- `user_input`: The user''s original request.', '- `analysis`:
+          The analysis provided by the Analyzer Agent.', '- `past_history`: (Optional) Summary of previous attempts.', 'Your
+          output must include:', '1. `decision`: Either "GO" (success) or "NO-GO" (failure/needs refinement).', '2. `feedback`:
+          If "NO-GO", provide specific instructions on what to fix (e.g., "The query failed because table X does not exist.
+          Try using table Y."). If "GO", provide a final polite summary for the user.', 'Constraints:', '- If the analysis
+          says the result is correct and answers the question, output "GO".', '- If there is an error or the result is wrong,
+          output "NO-GO".']
+      input_schema: ReflexionInput
+      output_schema: ReflexionOutput
+  rewrite_prompt_agent:
+    type: instance
+    models: [gemini-2.5-pro]
+    params:
+      name: rewrite_prompt_agent
+      description: Rewrites user input into a simplified prompt, adapting to feedback if present.
+      instruction: ['You are a language simplification agent that rewrites user queries into clear, structured natural language
+          instructions suitable for SQL query generation.', 'You will receive:', '- `user_input`: a natural language question
+          or instruction from the user', '- `db_schema`: a textual description of the database schema', '- `feedback`: (Optional)
+          Feedback from a previous failed attempt (e.g., "The query failed because table X doesn''t exist").', 'Your task
+          is to rewrite the `user_input` into a clean, precise prompt.', 'If `feedback` is provided, you MUST use it to adjust
+          your rewrite. For example, if the feedback says a column is missing, try to infer the correct column or rephrase
+          the request to avoid it.', Do not generate or suggest any SQL queries., Only return the rewritten natural language
+          prompt.]
+      input_schema: RewritePromptInput
+  root_agent:
+    type: instance
+    params:
+      name: IterativeSQLPipeline
+      description: Iteratively rephrases, generates, analyzes, and refines SQL queries.
+      sub_agents: [refinement_loop]
+  routing_agent:
+    type: instance
+    models: [gemini-2.5-pro]
+    params:
+      name: routing_agent
+      description: Routes based on Go/No-Go decision.
+      instruction: [You are a Routing Agent. You check the decision from the Reflexion Agent., '- If the decision is "GO",
+          you should output a final response to the user summarizing the answer and the raw result.', Then FORCE exiting the
+          loop., '- If the decision is "NO-GO", you should output a message indicating that we need to retry/refine, passing
+          the feedback along.', 'However, since you are in a loop, your main job is to act as the gatekeeper.']
+      input_schema: RoutingInput
+
+models:
+  gemini-2.5-pro:
+    type: literal
+    agents: [routing_agent, generator_agent, analyzer_agent, rewrite_prompt_agent, reflexion_agent]
+
+tools:
+  get_schema_tool:
+    type: function
+    agents: [generator_agent]
+  run_sql_query_tool:
+    type: function
+    agents: [generator_agent]
+
+teams:
+  refinement_loop:
+    type: loop
+    agents: [refinement_loop, rewrite_prompt_agent, generator_agent, analyzer_agent, reflexion_agent, routing_agent]
+  root_agent:
+    type: sequential
+    agents: [root_agent, refinement_loop]
+
+imports:
+  analyzer_agent: subagents.analyzer.analyzer_agent
+  Any: typing.Any
+  ast: ast
+  asyncio: asyncio
+  BaseModel: pydantic.BaseModel
+  CallbackContext: google.adk.agents.callback_context.CallbackContext
+  Content: google.genai.types.Content
+  CORSMiddleware: fastapi.middleware.cors.CORSMiddleware
+  FastAPI: fastapi.FastAPI
+  FunctionTool: google.adk.tools.function_tool.FunctionTool
+  generator_agent: subagents.generator.generator_agent
+  get_schema_tool: functions.db_tools.get_schema_tool
+  InMemorySessionService: google.adk.sessions.InMemorySessionService
+  List: typing.List
+  Literal: typing.Literal
+  LlmAgent: google.adk.agents.LlmAgent
+  load_dotenv: dotenv.load_dotenv
+  logging: logging
+  LoopAgent: google.adk.agents.LoopAgent
+  Optional: typing.Optional
+  os: os
+  Part: google.genai.types.Part
+  reflexion_agent: subagents.reflexion.reflexion_agent
+  Request: fastapi.Request
+  rewrite_prompt_agent: subagents.rewrite_prompt.rewrite_prompt_agent
+  root_agent: sql_agent.agent.root_agent
+  routing_agent: subagents.routing.routing_agent
+  run_sql_query_tool: functions.db_tools.run_sql_query_tool
+  Runner: google.adk.runners.Runner
+  SequentialAgent: google.adk.agents.SequentialAgent
+  sql_agent: sql_agent.agent.root_agent
+  SQLDatabase: langchain_community.utilities.SQLDatabase
+  uuid: uuid
+  uvicorn: uvicorn
+
+functions:
+  build_content_from_history_and_query:
+    type: sync
+    module: main
+    args: [query, history]
+    params:
+      returns: Content
+  get_schema:
+    type: sync
+    module: functions.db_tools
+    args: [input]
+    params:
+      returns: dict
+  get_status:
+    type: async
+    module: main
+  init_runner:
+    type: async
+    module: main
+  loop_termination_callback:
+    type: sync
+    module: sql_agent.agent
+    args: [context]
+  process_query:
+    type: async
+    module: main
+    args: [req]
+  run_sql_query:
+    type: sync
+    module: functions.db_tools
+    args: [input]
+    params:
+      returns: dict
+  run_test:
+    type: async
+    module: reproduce_loop
+
+variables:
+  USER_ID:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [main]
