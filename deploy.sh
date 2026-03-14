@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-PROJECT_ID="${GOOGLE_CLOUD_PROJECT:-your-project-id}"
+PROJECT_ID="gemini-first-439812"
 REGION="${GOOGLE_CLOUD_LOCATION:-us-central1}"
 AGENT_NAME="adk-sql-agent"
 SERVICE_ACCOUNT="${AGENT_NAME}-sa@${PROJECT_ID}.iam.gserviceaccount.com"
@@ -19,7 +19,7 @@ echo ""
 
 # Step 1: Enable required APIs
 echo "📦 Enabling required APIs..."
-gcloud services enable \
+~/google-cloud-sdk/bin/gcloud services enable \
   aiplatform.googleapis.com \
   run.googleapis.com \
   artifactregistry.googleapis.com \
@@ -28,19 +28,19 @@ gcloud services enable \
 
 # Step 2: Create service account (if it doesn't exist)
 echo "🔐 Setting up service account..."
-if ! gcloud iam service-accounts describe $SERVICE_ACCOUNT --project=$PROJECT_ID &>/dev/null; then
-  gcloud iam service-accounts create ${AGENT_NAME}-sa \
+if ! ~/google-cloud-sdk/bin/gcloud iam service-accounts describe $SERVICE_ACCOUNT --project=$PROJECT_ID &>/dev/null; then
+  ~/google-cloud-sdk/bin/gcloud iam service-accounts create ${AGENT_NAME}-sa \
     --display-name="ADK SQL Agent Service Account" \
     --project=$PROJECT_ID
 fi
 
 # Step 3: Grant necessary permissions
 echo "🔑 Granting permissions..."
-gcloud projects add-iam-policy-binding $PROJECT_ID \
+~/google-cloud-sdk/bin/gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member="serviceAccount:$SERVICE_ACCOUNT" \
   --role="roles/aiplatform.user"
 
-gcloud projects add-iam-policy-binding $PROJECT_ID \
+~/google-cloud-sdk/bin/gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member="serviceAccount:$SERVICE_ACCOUNT" \
   --role="roles/logging.logWriter"
 

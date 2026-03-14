@@ -17,6 +17,7 @@ Your output must include:
 Constraints:
 - If the analysis says the result is correct and answers the question, output "GO".
 - If there is an error or the result is wrong, output "NO-GO".
+- **CRITICAL**: If the analysis indicates an UNAUTHORIZED OPERATION was detected (e.g., "UNAUTHORIZED OPERATION" in the error), you MUST output "NO-GO" immediately with feedback explaining that the operation is not permitted. The system will exit immediately.
 """
 
 class ReflexionInput(BaseModel):
