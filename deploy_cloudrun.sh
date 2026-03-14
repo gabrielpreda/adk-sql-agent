@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-PROJECT_ID="${GOOGLE_CLOUD_PROJECT:-your-project-id"
+PROJECT_ID="gemini-first-439812"
 REGION="${GOOGLE_CLOUD_LOCATION:-us-central1}"
 SERVICE_NAME="adk-sql-agent"
 
@@ -22,7 +22,7 @@ echo ""
 
 # Step 1: Enable required APIs
 echo "📦 Enabling required APIs..."
-gcloud services enable \
+~/google-cloud-sdk/bin/gcloud services enable \
   run.googleapis.com \
   cloudbuild.googleapis.com \
   containerregistry.googleapis.com \
@@ -31,13 +31,13 @@ gcloud services enable \
 
 # Step 2: Build the container image
 echo "🏗️  Building container image..."
-gcloud builds submit \
+~/google-cloud-sdk/bin/gcloud builds submit \
   --tag $IMAGE_NAME \
   --project=$PROJECT_ID
 
 # Step 3: Deploy to Cloud Run
 echo "🚢 Deploying to Cloud Run..."
-gcloud run deploy $SERVICE_NAME \
+~/google-cloud-sdk/bin/gcloud run deploy $SERVICE_NAME \
   --image $IMAGE_NAME \
   --platform managed \
   --region $REGION \
@@ -53,7 +53,7 @@ gcloud run deploy $SERVICE_NAME \
   --project=$PROJECT_ID
 
 # Get the service URL
-SERVICE_URL=$(gcloud run services describe $SERVICE_NAME \
+SERVICE_URL=$(~/google-cloud-sdk/bin/gcloud run services describe $SERVICE_NAME \
   --platform managed \
   --region $REGION \
   --project=$PROJECT_ID \
@@ -73,4 +73,4 @@ echo "    -H 'Content-Type: application/json' \\"
 echo "    -d '{\"query\": \"Show me the top 10 authors by sales\"}'"
 echo ""
 echo "To view logs:"
-echo "  gcloud run services logs read $SERVICE_NAME --project=$PROJECT_ID --region=$REGION"
+echo "gcloud run services logs read $SERVICE_NAME --project=$PROJECT_ID --region=$REGION"

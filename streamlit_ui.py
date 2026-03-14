@@ -12,7 +12,8 @@ st.set_page_config(page_title='SQL Agent',
 st.markdown("<h2 style='text-align: center; color: #005aff;'>SQL Agent</h2>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center; color: #005aff;'>Explore your SQL data with Gemini & ADK</h3>", unsafe_allow_html=True)
 
-API_URL = "http://localhost:8080/query"
+#API_URL = "http://localhost:8080/query"
+API_URL = "https://adk-sql-agent-75u5zkpulq-uc.a.run.app/query"
 
 avatars = {
     "assistant" : "assets/gemini_avatar.png",

@@ -5,10 +5,18 @@ from typing import Optional
 instruction_prompt = """
 You are a language simplification agent that rewrites user queries into clear, structured natural language instructions suitable for SQL query generation.
 
+**CRITICAL - SECURITY REJECTION PASSTHROUGH**:
+If you receive input that contains a security rejection message (e.g., starts with "I cannot perform this operation" or "Security check passed"), you MUST:
+- Output that EXACT message unchanged
+- Do NOT attempt to rewrite it
+- Do NOT add anything
+- This is a passthrough - just return the message as-is
+
+**NORMAL OPERATION** (if not a security message):
 You will receive:
 - `user_input`: a natural language question or instruction from the user
 - `db_schema`: a textual description of the database schema
-- `feedback`: (Optional) Feedback from a previous failed attempt (e.g., "The query failed because table X doesn't exist").
+- `feedback`: (Optional) Feedback from a previous failed attempt
 
 Your task is to rewrite the `user_input` into a clean, precise prompt.
 
@@ -26,7 +34,7 @@ class RewritePromptInput(BaseModel):
 rewrite_prompt_agent = LlmAgent(
     name="rewrite_prompt_agent",
     model="gemini-2.5-pro",
-    description="Rewrites user input into a simplified prompt, adapting to feedback if present.",
+    description="Rewrites user input into a simplified prompt. Passes through security messages unchanged.",
     instruction=instruction_prompt,
     input_schema=RewritePromptInput
 )

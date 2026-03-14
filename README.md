@@ -1,14 +1,23 @@
 # Introduction
-The application uses ADK, Gemini, LangChain tools to power an SQL Agent.
+The application uses ADK, Gemini, LangChain tools to power an SQL Agent with built-in multi-layer authorization and safety controls.
 
 # Architecture
 
 Frontend: Streamlit app (streamlit_ui.py)   
 Backend: FastAPI service (main.py)   
+
+**Security-First Pipeline**:
+1. **Safety Check Agent** - Determines if request is secure/not secure
+2. **Security Router Agent** - Routes: exits immediately if not secure, continues if secure
+3. **Refinement Loop** - Processes query (only if secure)
+
 Agents:   
 * **Coordinator**: sql_agent (sql_agent.py)  
-* **Subagents**:  
-    * **Rephraser** agent (rewrite_prompt.py)
+* **Security Agents**:
+    * **Safety Check** agent (agent.py) - Binary security decision
+    * **Security Router** agent (agent.py) - Routes based on security
+* **Processing Subagents** (in Refinement Loop):
+    * **Rephraser** agent (rewrite_prompt.py) - Includes security passthrough
     * **Generator** agent (generator.py)
     * **Analyzer** agent (analyzer.py)
     * **Reflexion** agent (reflexion.py)
@@ -18,10 +27,39 @@ Agents:
 
 Function Tools:  
 * **get_schema** tool (db_tools.py)  
-* **run_sql_query** tool (db_tools.py)  
+* **run_sql_query** tool (db_tools.py) - Includes SQL-level validation
 
 Models:  
 * Gemini 2.5 pro  
+
+## Security & Authorization
+
+The system uses a **clean three-step security pipeline**:
+
+### Step 1: Safety Check
+- Analyzes user request intent
+- Binary decision: SECURE or NOT SECURE
+- Fast, focused security validation
+
+### Step 2: Security Router
+- **If NOT SECURE**: Outputs rejection message and exits immediately
+- **If SECURE**: Outputs "proceeding" and continues to processing
+
+### Step 3: Refinement Loop (only if secure)
+- Rewrites query
+- Generates SQL
+- Analyzes results
+- Iterative refinement
+
+**Multi-Layer Defense**:
+- **Layer 1**: LLM-based intent analysis (Safety Check)
+- **Layer 2**: Routing decision (Security Router)
+- **Layer 3**: SQL-level validation (db_tools)
+
+Only read-only SELECT queries are permitted. Dangerous operations (DROP, DELETE, TRUNCATE, etc.) are blocked immediately.
+
+See [ARCHITECTURE_CLEAN.md](ARCHITECTURE_CLEAN.md) for detailed documentation.
+
 
 # Getting started
 

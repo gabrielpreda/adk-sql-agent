@@ -44,6 +44,31 @@ def run_sql_query(input: Optional[dict] = None) -> dict:
     
     logger.info(f"[SQL Tool] SQL Query: {sql_query}")
 
+    # Validate SQL query for dangerous operations
+    if sql_query:
+        sql_upper = sql_query.upper().strip()
+        
+        # List of dangerous SQL operations that should be blocked
+        dangerous_operations = [
+            'DROP TABLE',
+            'DROP DATABASE',
+            'TRUNCATE',
+            'DELETE FROM',
+            'ALTER TABLE',
+            'CREATE TABLE',
+            'CREATE DATABASE',
+            'INSERT INTO',
+            'UPDATE ',
+            'GRANT ',
+            'REVOKE ',
+        ]
+        
+        for operation in dangerous_operations:
+            if operation in sql_upper:
+                error_msg = f"UNAUTHORIZED OPERATION: SQL query contains '{operation}' which is not allowed. Only SELECT queries are permitted."
+                logger.error(f"[SQL Tool] {error_msg}")
+                return {"error": error_msg, "unauthorized": True}
+
     try:
         result = db.run(sql_query)
         result = ast.literal_eval(result)
